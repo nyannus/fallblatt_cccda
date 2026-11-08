@@ -25,14 +25,6 @@ defmodule FallblattUI.MixProject do
     ]
   end
 
-  def cli do
-    [
-      preferred_envs: [precommit: :test]
-    ]
-  end
-
-  # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
@@ -44,12 +36,9 @@ defmodule FallblattUI.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.0"},
-      {:lazy_html, ">= 0.1.0", only: :test},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
-      {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:dns_cluster, "~> 0.2.0"},
+      {:carbon_phoenix, github: "nyannus/carbon_phoenix"},
       {:bandit, "~> 1.5"}
     ]
   end
@@ -63,13 +52,12 @@ defmodule FallblattUI.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
-      "assets.setup": ["esbuild.install --if-missing"],
+      "assets.setup": ["cmd npm install --prefix assets", "esbuild.install --if-missing"],
       "assets.build": ["compile", "esbuild fallblatt_ui"],
       "assets.deploy": [
         "esbuild fallblatt_ui --minify",
         "phx.digest"
-      ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      ]
     ]
   end
 end

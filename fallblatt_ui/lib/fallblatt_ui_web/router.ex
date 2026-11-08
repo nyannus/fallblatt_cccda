@@ -10,18 +10,9 @@ defmodule FallblattUIWeb.Router do
     plug :put_secure_browser_headers
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
   scope "/", FallblattUIWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", DisplayLive
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", FallblattUIWeb do
-  #   pipe_through :api
-  # end
 end

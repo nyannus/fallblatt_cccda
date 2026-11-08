@@ -17,7 +17,7 @@ defmodule FallblattUIWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  def static_paths, do: ~w(assets fonts favicon.ico robots.txt)
 
   def router do
     quote do
@@ -33,16 +33,6 @@ defmodule FallblattUIWeb do
   def channel do
     quote do
       use Phoenix.Channel
-    end
-  end
-
-  def controller do
-    quote do
-      use Phoenix.Controller, formats: [:html, :json]
-
-      import Plug.Conn
-
-      unquote(verified_routes())
     end
   end
 
@@ -79,8 +69,9 @@ defmodule FallblattUIWeb do
     quote do
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components
-      import FallblattUIWeb.CoreComponents
+      # Carbon UI components
+      import CarbonPhoenix.CoreComponents
+      alias CarbonPhoenix.WebComponents, as: Carbon
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

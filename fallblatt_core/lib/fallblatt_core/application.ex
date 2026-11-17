@@ -1,20 +1,18 @@
 defmodule FallblattCore.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
-
   use Application
 
   @impl true
   def start(_type, _args) do
-    children = [
-      # Starts a worker by calling: FallblattCore.Worker.start_link(arg)
-      # {FallblattCore.Worker, arg}
-    ]
+    [
+      # Starting registries so the Queues and Workers can be found by display
+      {Registry, keys: :unique, name: FallblattCore.WorkerRegistry},
+      {Registry, keys: :unique, name: FallblattCore.QueueRegistry},
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: FallblattCore.Supervisor]
-    Supervisor.start_link(children, opts)
+      # Lastly start the configured display at lib/fallblatt_display/cccda.ex
+      # The display will act as supervisor itself and start the worker and queue
+      FallblattDisplay.CCCDA
+    ]
+    |> Supervisor.start_link(strategy: :one_for_one, name: FallblattCore.Supervisor)
   end
 end

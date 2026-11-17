@@ -1,14 +1,19 @@
-defmodule FallblattCore.K9000.Command do
+defmodule FallblattCore.K9000.Commands do
   import Bitwise
+  alias FallblattCore.Command
 
-  @type t :: %__MODULE__{
-          payload: binary(),
-          response_bytes: non_neg_integer(),
-          response_format: function()
-        }
-  defstruct payload: <<>>,
-            response_bytes: 0,
-            response_format: &Function.identity/1
+  @typedoc """
+    Address used to address the fbm, set via the dip switches on the backboard.
+    Address 0 is reserved for calibration mode
+    Address 127 is reserved for special Hitachi operation mode (idk either)
+  """
+  @type address() :: non_neg_integer()
+
+  @typedoc "Charcode of the letter to be displayed or assigned a flap"
+  @type code() :: non_neg_integer()
+
+  @typedoc "Position of the flap in the wheel starting with the blank flap at 0"
+  @type position() :: non_neg_integer()
 
   # OP Codes
   @cmd_start 0b0001
@@ -44,7 +49,7 @@ defmodule FallblattCore.K9000.Command do
       # The MSB of the byte being set signals beginning of a new command.
       # Since this implies the MSB cannot be set for any arguments, the
       # MSB of the arguments are stored in this first byte:
-      0::1,
+      1::1,
       # Address expansion flag (MSB of the address, 1 if address > 127)
       0::1,
       # Code expansion flag (MSB of the charcode, 1 if code > 127)
@@ -64,10 +69,10 @@ defmodule FallblattCore.K9000.Command do
   defp with_address(<<cmd::8>>, address), do: <<cmd::binary, address::8>>
 
   # Helper function to append the charcode argument and set the flag if needed
-  defp with_code(<<cmd::8, address::8>>, code) when code > 127,
+  defp with_code(<<cmd::8, address::binary>>, code) when code > 127,
     do: <<
       cmd ||| @flag_large_code::8,
-      address::8,
+      address::binary,
       code &&& 0x7F::8
     >>
 
@@ -85,10 +90,13 @@ defmodule FallblattCore.K9000.Command do
       position &&& 0x7F::8
     >>
 
-  defp noreply(cmd), do: %__MODULE__{payload: cmd}
+  # Special end-of-arguments symbol only used in load_table
+  defp with_stop(cmd), do: <<cmd::binary, 0x9B>>
 
-  defp reply(cmd, opts \\ []),
-    do: %__MODULE__{
+  defp noreply(cmd), do: %Command{payload: cmd}
+
+  defp reply(cmd, opts),
+    do: %Command{
       payload: cmd,
       response_bytes: Keyword.fetch!(opts, :bytes),
       response_format: Keyword.get(opts, :format, &Function.identity/1)
@@ -103,6 +111,7 @@ defmodule FallblattCore.K9000.Command do
     > Erhält ein FBM während einer Einstellung (Status Lauf) den Startbefehl,
     > stellt sich das FBM auf den zuletzt gesendeten Code einer Einstellsequenz ein.
   """
+  @spec start() :: Command.t()
   def start() do
     command(@cmd_start)
     |> noreply()
@@ -116,6 +125,7 @@ defmodule FallblattCore.K9000.Command do
     > Leerbild. Der "Leerbildbefehl" löscht eine evt. erhaltene Einstellsequenz.
     > Ist das FBM gesperrt, wird keine Leerbildeinstellung gestartet.
   """
+  @spec blank() :: Command.t()
   def blank() do
     command(@cmd_start)
     |> noreply()
@@ -127,6 +137,7 @@ defmodule FallblattCore.K9000.Command do
     > Der "Softwareresetbefehl" sperrt die Interuptbearbeitung im FBM und bewirkt
     > dadurch den Ablauf des Watchdogtimers mit anschließendem Reset des FBM-Controllers.
   """
+  @spec reset() :: Command.t()
   def reset() do
     command(@cmd_reset)
     |> noreply()
@@ -141,6 +152,7 @@ defmodule FallblattCore.K9000.Command do
     > FBM mit der entsprechenden Statusmeldung und kann dann noch mit dem
     > "Startbefehl" eingestellt werden.
   """
+  @spec status(address()) :: Command.t()
   def status(address) do
     command(@cmd_read_status)
     |> with_address(address)
@@ -186,6 +198,7 @@ defmodule FallblattCore.K9000.Command do
     > wird diese Abfrage mit dem noch eingestellten Code beantwortet und der Start
     > einer Einstellung mit dem "Startbefehl" ist weiterhin möglich.
   """
+  @spec get_code(address()) :: Command.t()
   def get_code(address) do
     command(@cmd_read_code)
     |> with_address(address)
@@ -204,6 +217,7 @@ defmodule FallblattCore.K9000.Command do
     > nommen. Ist ein FBM gesperrt, wird die Einstellsequenz abgespeichert und
     > kann nach Freigabe mit dem "Startbefehl" gestartet werden.
   """
+  @spec set_code(address(), code()) :: Command.t()
   def set_code(address, code) do
     command(@cmd_set_code)
     |> with_address(address)
@@ -226,7 +240,7 @@ defmodule FallblattCore.K9000.Command do
 
     Beispiel :
 
-    9Dh, 00h,00h,20h,04h,33h,0Bh,41h,9Bh
+    9Dh,00h,00h,20h,04h,33h,0Bh,41h,9Bh
 
     Das FBM mit der Adresse 0 ist bedruckt: Blatt 0 -  Leerbildblatt
         Blatt 4 -  3
@@ -234,10 +248,18 @@ defmodule FallblattCore.K9000.Command do
 
     0xBD,0x00h,0x32,0x46,0x33,0x58,0x31h,0x45h,0x9Bh
   """
+  @spec load_table(address(), code(), position()) :: Command.t()
   def load_table(address, code, position) do
     command(@cmd_set_table)
     |> with_address(address)
     |> with_code(code)
     |> with_position(position)
+    |> reply(
+      bytes: 1,
+      format: fn
+        <<^position>> -> :ok
+        _ -> :error
+      end
+    )
   end
 end

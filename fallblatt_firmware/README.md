@@ -1,6 +1,8 @@
 # FallblattFirmware
 
-**TODO: Add description**
+> ### Notice
+> This project does not contain any business logic.
+> It wraps the projects `FallblattCore` and `FallblattUI` into a single nerves firmware, that can be flash on a raspberry pi.
 
 ## Targets
 

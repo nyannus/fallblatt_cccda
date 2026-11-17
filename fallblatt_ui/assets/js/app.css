@@ -1,0 +1,5 @@
+.cds-theme-zone-g100 {
+  --cds-layer-background-01: var(--cds-background);
+  --cds-layer-background-02: var(--cds-layer-01);
+  --cds-layer-background-03: var(--cds-layer-02);
+}

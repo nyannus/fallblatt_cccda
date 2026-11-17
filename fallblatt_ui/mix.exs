@@ -38,7 +38,7 @@ defmodule FallblattUI.MixProject do
       {:phoenix_live_view, "~> 1.2.0"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:jason, "~> 1.2"},
-      {:carbon_phoenix, github: "nyannus/carbon_phoenix"},
+      {:carbon_phoenix, "~> 0.1.1"},
       {:bandit, "~> 1.5"}
     ]
   end

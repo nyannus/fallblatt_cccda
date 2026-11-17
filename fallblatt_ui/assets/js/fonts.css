@@ -1,0 +1,38 @@
+@font-face {
+  font-family: "APL386";
+  src: url("/fonts/APL386.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Helvetica";
+  src: url("/fonts/helveticaneue.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --cds-font-family: "APL386", monospace;
+}
+
+.fallblatt {
+  position: relative;
+  font-family: "Helvetica", monospace;
+}
+
+.fallblatt::after {
+  content: '';
+  position: absolute;
+  top: 48%;
+  left: 0; right: 0;
+  height: 0.06em;
+  background: black;
+  pointer-events: none;
+}
+
+* {
+  font-family: "APL386", monospace;
+}

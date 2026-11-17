@@ -70,8 +70,9 @@ defmodule FallblattUIWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Carbon UI components
-      import CarbonPhoenix.CoreComponents
-      alias CarbonPhoenix.WebComponents, as: Carbon
+      import CarbonPhoenix.WebComponents
+      alias CarbonPhoenix.CoreComponents
+      alias CarbonPhoenix.Icons
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

@@ -1,19 +1,20 @@
 defmodule FallblattCore.K9000.Commands do
   import Bitwise
   alias FallblattCore.Command
+  alias FallblattCore.K9000.Status
 
   @typedoc """
     Address used to address the fbm, set via the dip switches on the backboard.
     Address 0 is reserved for calibration mode
     Address 127 is reserved for special Hitachi operation mode (idk either)
   """
-  @type address() :: non_neg_integer()
+  @type address() :: 0..127
 
   @typedoc "Charcode of the letter to be displayed or assigned a flap"
-  @type code() :: non_neg_integer()
+  @type code() :: 0..254
 
   @typedoc "Position of the flap in the wheel starting with the blank flap at 0"
-  @type position() :: non_neg_integer()
+  @type position() :: 0..52
 
   # OP Codes
   @cmd_start 0b0001
@@ -156,38 +157,7 @@ defmodule FallblattCore.K9000.Commands do
   def status(address) do
     command(@cmd_read_status)
     |> with_address(address)
-    |> reply(bytes: 1, format: &status_code_format/1)
-  end
-
-  defp status_code_format(<<1::1, blank::1, reset::1, locked::1, error::4>>) do
-    text =
-      case error do
-        0b0000 -> "keine Störung"
-        0b0001 -> "Störung (Synchronimpuls fehlt)"
-        0b0010 -> "Störung (Blattimpuls fehlt)"
-        0b0011 -> "Störung (Motor dreht nicht/keine Sensorimpulse)"
-        0b0100 -> "Störung (keine 42V Impulse)"
-        0b0101 -> "Störung (keine 42V Impulse u. kein Synchronimpuls)"
-        0b0110 -> "Störung (keine 42V Impulse u. kein Blattimpuls)"
-        0b0111 -> "Störung (keine 42V Impulse u. keine Sensorimpulse, 42V defekt)"
-        0b1000 -> "Übertragungsfehler (letztes Telegramm wurde nicht verstanden)"
-        0b1001 -> "Startbefehl nach Einstellbefehl fehlt"
-        0b1010 -> "Störung (Datencode unbekannt)"
-        0b1100 -> "Störung (Modul schwergängig, Zeitproblem)"
-        0b1111 -> "Lauf"
-      end
-
-    status =
-      for {flag, true} <- [
-            blank: blank,
-            reset: reset,
-            locked: locked,
-            running: error == 0b1111,
-            ok: error == 0b0000
-          ],
-          do: flag
-
-    {status, text}
+    |> reply(bytes: 1, format: &Status.from_binary/1)
   end
 
   @doc """
